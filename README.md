@@ -7,4 +7,4 @@ Enter commands after the first ">" user prompt by typing ">>>" followed by an av
 To find a list of available commands, type ">>>HELP" or ">>>?" at the non-initial ">" user prompts.
 
 # !! IMPORTANT !!
-You'll need to make a new environment variable named "OPENAI_API_KEY" to store your own OpenAI API key. This software does not come with and OpenAI API key.
+You'll need to make a new environment variable named "OPENAI_API_KEY" to store your own OpenAI API key. This software does not come with an OpenAI API key.
