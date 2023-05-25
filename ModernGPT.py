@@ -87,10 +87,6 @@ while True:
     tokens_consumed_str = "{:,}".format(tokens_consumed)
     print("Total tokens this call: " + str(token_count_str))
     print("Tokens consumed this conversation: " + str(tokens_consumed_str) + "\n")
-    
-    # num = 1234567.89
-    # formatted_num = "{:,.2f}".format(num)
-    # print(formatted_num)
 
     while True:
         user_prompt = ""
