@@ -95,7 +95,7 @@ while True:
     while True:
         user_prompt = ""
         user_prompt = input("> ")
-        if ">>>" in user_prompt:
+        if user_prompt.startswith(">>>"):
             if "HELP" in user_prompt or "?" in user_prompt:
                 print("Available commands are:\n  CONVERSATION_NAME\n  SYSTEM\n  SAVE\n  EXIT\n  HELP\n\n  'SAVE' and 'EXIT' can be used in the same command.\n")
                 if "CONVERSATION_NAME" in user_prompt:
@@ -106,7 +106,7 @@ while True:
                     print("SAVE:\n  Saves the conversation to file.\n  Prompts user to name the conversation if not yet named.\n")
                 elif "EXIT" in user_prompt:
                     print("EXIT:\n  Exits the conversation, closing the program.\n  Asks user if they want to save before closing.\n")
-                elif "HELP HELP" in user_prompt or "HELP ?" in user_prompt or "? HELP" in user_prompt or "? ?" in user_prompt:
+                elif "HELP HELP" in user_prompt or "HELP ?" in user_prompt or "? HELP" in user_prompt or "? ?" in user_prompt or "HELP?" in user_prompt or "??" in user_prompt or "?HELP" in user_prompt:
                     print("HELP:\n  Prints the available commands list.\n")
             else:
                 if "CONVERSATION_NAME" in user_prompt:
