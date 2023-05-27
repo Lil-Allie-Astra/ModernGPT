@@ -1,5 +1,4 @@
 # ModernGPT
-##Description:
 A ChatGPT chatbot with variable conversational awareness, and additional features.
 Now with automatic retrying upon a failed API call, with a graduating delay between retries; if retry count reaches 5, it stops trying.
 Also counts token for the most recent API call, as well as total tokens consumed by the current conversation.
