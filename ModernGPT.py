@@ -9,11 +9,22 @@ def cls():
     os.system('cls' if os.name == 'nt' else 'clear')
 
 openai.api_key = os.getenv('OPENAI_API_KEY')
+
+local_variables = {}
+variable_names = ['n', 'temperature', 'message_limit', 'conversation_name', 'tokens_consumed_total', 'ai_name', 'user_name', ]
+result_dict = []
+conversation = []
+new_conversation = []
+
 n = int(1)
 temperature = float(0.3)
 message_limit = int(3)
 conversation_name = ""
+prompt_tokens = int(0)
+completion_tokens = int(0)
+token_count = int(0)
 tokens_consumed = int(0)
+tokens_consumed_total = int(0)
 load_path = ''
 cls()
 ai_name = input("""A.I.: "What is my name?" \n""")
@@ -58,15 +69,34 @@ while True:
     truncated_conversation = []
     assistant_count = 0
     user_count = 0
+    for message in conversation:
+        if user_prompt.lower() == '>>>load':
+            if 'variable_name' in message:
+                if message['type'] == 'str':
+                    locals()[message['variable_name']] = str(message["value"])
+                    continue
+                if message['type'] == 'int':
+                    locals()[message['variable_name']] = int(message["value"])
+                    continue
+                if message['type'] == 'float':
+                    locals()[message['variable_name']] = float(message["value"])
+                    continue
+                if message['type'] == 'bool':
+                    locals()[message['variable_name']] = bool(message["value"])
+                    continue
+                else:
+                    locals()[message['variable_name']] = str(message["value"])
+                    continue
     for message in reversed(conversation):
-        if message["role"] == "assistant" and assistant_count < message_limit:
-            truncated_conversation.insert(0, message)
-            assistant_count += 1
-        elif message["role"] == "user" and user_count < message_limit:
-            truncated_conversation.insert(0, message)
-            user_count += 1
-        elif message["role"] == "system":
-            truncated_conversation.insert(0, message)
+        if 'role' in message:
+            if message["role"] == "assistant" and int(assistant_count) < int(message_limit):
+                truncated_conversation.insert(0, message)
+                assistant_count += 1
+            elif message["role"] == "user" and int(user_count) < int(message_limit):
+                truncated_conversation.insert(0, message)
+                user_count += 1
+            elif message["role"] == "system":
+                truncated_conversation.insert(0, message)
 
     def chat_with_gpt3(prompt):
         response = openai.ChatCompletion.create(
@@ -103,49 +133,60 @@ while True:
         conversation.append({"role": "assistant", "content": response})
 
     cls()
+    plaintext_conversation = ''''''
     print("\r" if conversation_name == "" else '"' + conversation_name + '": \n', end="")
+    plaintext_conversation += str("\r" if conversation_name == "" else '"' + conversation_name + '": \n')
     for message in conversation:
-        role = message['role']
-        if role == "assistant":
-            role_name = ai_name
-        elif role == "user":
-            role_name = user_name
-        elif role == "system":
-            role_name = "SYSTEM"
-        else:
-            exit("Unknown role")
-        if role_name != "SYSTEM":
-            if role_name == ai_name:
-                content_list = message['content'].splitlines(keepends=True)
-                code_block = False
-                revised_content = str("")
-                for line in content_list:
-                    if str(line).startswith('```') and code_block == False:
-                        line = str(f'\033[32m{line}')
-                        code_block = not code_block
-                        revised_content += line
-                        continue
-                    elif str(line).startswith('```') and code_block == True:
-                        line = str(f'{line}\033[33m')
-                        code_block = not code_block
-                        revised_content += line
-                        continue
-                    else:
-                        revised_content += line
-                        continue
-                print("\033[1;33m" + role_name + ":\033[0m\033[33m\n" + revised_content + "\033[0m\n\n")
-            elif role_name == user_name:
-                print("\033[1;36m" + role_name + ":\033[0m\033[36m\n" + message['content'] + "\033[0m\n\n")
-    if user_prompt.lower() != ">>>load":
-        tokens_consumed += token_count
-        prompt_tokens_str = "{:,}".format(prompt_tokens)
-        completion_tokens_str = "{:,}".format(completion_tokens)
-        token_count_str = "{:,}".format(token_count)
-        tokens_consumed_str = "{:,}".format(tokens_consumed)
-        print("\033[2;37mPrompt tokens this API call: \033[2;31m" + str(prompt_tokens_str) + "\033[0m")
-        print("\033[2;37mCompletion tokens this API call: \033[2;31m" + str(completion_tokens_str) + "\033[0m")
-        print("\033[2;37mTotal tokens this API call: \033[2;31m" + str(token_count_str) + "\033[0m")
-        print("\033[2;37mTokens consumed this conversation: \033[2;31m" + str(tokens_consumed_str) + "\033[0m\n\n")
+        if 'role' in message:
+            role = message['role']
+            if role == "assistant":
+                role_name = ai_name
+            elif role == "user":
+                role_name = user_name
+            elif role == "system":
+                role_name = "SYSTEM"
+            else:
+                exit("Unknown role")
+            if role_name != "SYSTEM":
+                if role_name == ai_name:
+                    content_list = message['content'].splitlines(keepends=True)
+                    code_block = False
+                    revised_content = str("")
+                    for line in content_list:
+                        if str(line).startswith('```') and code_block == False:
+                            line = str(f'\033[32m{line}')
+                            code_block = not code_block
+                            revised_content += line
+                            continue
+                        elif str(line).startswith('```') and code_block == True:
+                            line = str(f'{line}\033[33m')
+                            code_block = not code_block
+                            revised_content += line
+                            continue
+                        else:
+                            revised_content += line
+                            continue
+                    print("\033[1;33m" + role_name + ":\033[0m\033[33m\n" + revised_content + "\033[0m\n\n")
+                elif role_name == user_name:
+                    print("\033[1;36m" + role_name + ":\033[0m\033[36m\n" + message['content'] + "\033[0m\n\n")
+                plaintext_conversation += str(role_name + ":\n" + message['content'] + "\n\n")
+    tokens_consumed += token_count
+    tokens_consumed_total += tokens_consumed
+    prompt_tokens_str = "{:,}".format(prompt_tokens)
+    completion_tokens_str = "{:,}".format(completion_tokens)
+    token_count_str = "{:,}".format(token_count)
+    tokens_consumed_str = "{:,}".format(tokens_consumed)
+    tokens_consumed_total_str = "{:,}".format(tokens_consumed_total)
+    print("\033[2;37mPrompt tokens this API call: \033[2;31m" + str(prompt_tokens_str) + "\033[0m")
+    print("\033[2;37mCompletion tokens this API call: \033[2;31m" + str(completion_tokens_str) + "\033[0m")
+    print("\033[2;37mTotal tokens this API call: \033[2;31m" + str(token_count_str) + "\033[0m")
+    print("\033[2;37mTokens consumed this conversation this instance: \033[2;31m" + str(tokens_consumed_str) + "\033[0m")
+    print("\033[2;37mTokens consumed this conversation in total: \033[2;31m" + str(tokens_consumed_total_str) + "\033[0m\n\n")
+
+    for i in range(len(conversation)):
+        if "role" in conversation[i]:
+            new_conversation.append(conversation[i])
+    conversation = new_conversation
 
     while True:
         user_prompt = ""
@@ -176,25 +217,61 @@ while True:
                 elif "save" in str(user_prompt).lower():
                     if conversation_name == "":
                         conversation_name = input("Set conversation name: ")
-                    while True:
-                        root = tk.Tk()
-                        save_folder = filedialog.askdirectory()
-                        if save_folder:
-                            file_path = os.path.join(save_folder, f'{conversation_name}.aidiag')
-                            with open(file_path, "w") as file:
-                                json.dump(conversation, file, indent=4)
-                                print('Conversation saved to\n"' + file_path + '".\n')
+                    default_path = r'C:\Users\Public\Documents\AI Conversations'
+                    if os.path.isdir(default_path):
+                        file_path = os.path.join(default_path, f'{conversation_name}.aidiag')
+                        local_variables = dict(locals())
+                        for name in variable_names:
+                            for variable_name, value in local_variables.items():
+                                if variable_name == name:
+                                    result_dict.append({"variable_name": str(variable_name), "type": str(type(value)).split("'")[1], "value": value})
+                        for item in result_dict:
+                            conversation.append(item)
+                        with open(file_path, "w") as file:
+                            json.dump(conversation, file, indent=4)
+                            print('Conversation saved to\n"' + file_path + '".\n')
+                            if 'file' in locals():
+                                file.close()
+                        file_path2 = os.path.join(default_path, f'{conversation_name}.txt')
+                        with open(file_path2, "w") as file2:
+                            file2.write(plaintext_conversation)
+                            print('Plain-text version saved to\n"' + file_path2 + '".\n')
+                            if 'file2' in locals():
+                                file2.close()
+                        time.sleep(5)
+                    else:
+                        while True:
+                            root = tk.Tk()
+                            save_folder = filedialog.askdirectory()
+                            if save_folder:
+                                file_path = os.path.join(save_folder, f'{conversation_name}.aidiag')
+                                local_variables = dict(locals())
+                                for name in variable_names:
+                                    for variable_name, value in local_variables.items():
+                                        if variable_name == name:
+                                            result_dict.append({"variable_name": str(variable_name), "type": str(type(value)).split("'")[1], "value": value})
+                                for item in result_dict:
+                                    conversation.append(item)
+                                with open(file_path, "w") as file:
+                                    json.dump(conversation, file, indent=4)
+                                    print('Conversation saved to\n"' + file_path + '".\n')
+                                    if 'file' in locals():
+                                        file.close()
+                                file_path2 = os.path.join(save_folder, f'{conversation_name}.txt')
+                                with open(file_path2, "w") as file2:
+                                    file2.write(plaintext_conversation)
+                                    print('Plain-text version saved to\n"' + file_path2 + '".\n')
+                                    if 'file2' in locals():
+                                        file2.close()
                                 root.destroy()
                                 time.sleep(5)
-                                if 'file' in locals():
-                                    file.close()
-                            break
-                        else:
-                            print("No folder selected.")
-                            choice = input("Do you want to choose a new folder to save the conversation? (y/n): ")
-                            if choice.lower().startswith('n'):
-                                root.destroy()
                                 break
+                            else:
+                                print("No folder selected.")
+                                choice = input("Do you want to choose a new folder to save the conversation? (y/n): ")
+                                if choice.lower().startswith('n'):
+                                    root.destroy()
+                                    break
                     if "exit" in str(user_prompt).lower():
                         exit()
                 elif "exit" in str(user_prompt).lower() and "save" not in str(user_prompt).lower():
@@ -203,25 +280,61 @@ while True:
                     if confirm.lower().startswith('y'):
                         if conversation_name == "":
                             conversation_name = input("Set conversation name: ")
-                        while True:
-                            root = tk.Tk()
-                            save_folder = filedialog.askdirectory()
-                            if save_folder:
-                                file_path = os.path.join(save_folder, f'{conversation_name}.aidiag')
-                                with open(file_path, "w") as file:
-                                    json.dump(conversation, file, indent=4)
-                                    print('Conversation saved to\n"' + file_path + '".\n')
+                        default_path = r'C:\Users\Public\Documents\AI Conversations'
+                        if os.path.isdir(default_path):
+                            file_path = os.path.join(default_path, f'{conversation_name}.aidiag')
+                            local_variables = dict(locals())
+                            for name in variable_names:
+                                for variable_name, value in local_variables.items():
+                                    if variable_name == name:
+                                        result_dict.append({"variable_name": str(variable_name), "type": str(type(value)).split("'")[1], "value": value})
+                            for item in result_dict:
+                                conversation.append(item)
+                            with open(file_path, "w") as file:
+                                json.dump(conversation, file, indent=4)
+                                print('Conversation saved to\n"' + file_path + '".\n')
+                                if 'file' in locals():
+                                    file.close()
+                            file_path2 = os.path.join(default_path, f'{conversation_name}.txt')
+                            with open(file_path2, "w") as file2:
+                                file2.write(plaintext_conversation)
+                                print('Plain-text version saved to\n"' + file_path2 + '".\n')
+                                if 'file2' in locals():
+                                    file2.close()
+                            time.sleep(5)
+                        else:
+                            while True:
+                                root = tk.Tk()
+                                save_folder = filedialog.askdirectory()
+                                if save_folder:
+                                    file_path = os.path.join(save_folder, f'{conversation_name}.aidiag')
+                                    local_variables = dict(locals())
+                                    for name in variable_names:
+                                        for variable_name, value in local_variables.items():
+                                            if variable_name == name:
+                                                result_dict.append({"variable_name": str(variable_name), "type": str(type(value)).split("'")[1], "value": value})
+                                    for item in result_dict:
+                                        conversation.append(item)
+                                    with open(file_path, "w") as file:
+                                        json.dump(conversation, file, indent=4)
+                                        print('Conversation saved to\n"' + file_path + '".\n')
+                                        if 'file' in locals():
+                                            file.close()
+                                    file_path2 = os.path.join(save_folder, f'{conversation_name}.txt')
+                                    with open(file_path2, "w") as file2:
+                                        file2.write(plaintext_conversation)
+                                        print('Plain-text version saved to\n"' + file_path2 + '".\n')
+                                        if 'file2' in locals():
+                                            file2.close()
                                     root.destroy()
                                     time.sleep(5)
-                                    if 'file' in locals():
-                                        file.close()
-                                break
-                            else:
-                                print("No folder selected.")
-                                choice = input("Do you want to choose a new folder to save the conversation? (y/n): ")
-                                if choice.lower().startswith('n'):
-                                    root.destroy()
                                     break
+                                else:
+                                    print("No folder selected.")
+                                    choice = input("Do you want to choose a new folder to save the conversation? (y/n): ")
+                                    if choice.lower().startswith('n'):
+                                        root.destroy()
+                                        break
                     exit()
                 elif "number" in str(user_prompt).lower():
                     n = int(input("Number of chat completion choices: "))
